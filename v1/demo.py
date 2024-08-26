@@ -199,7 +199,6 @@ if __name__ == '__main__':
 
   print('load model successfully!')
 
-
   # initilize the tensor holder here.
   im_data = torch.FloatTensor(1)
   im_info = torch.FloatTensor(1)
@@ -257,6 +256,7 @@ if __name__ == '__main__':
             raise RuntimeError("Webcam could not open. Please check connection.")
           ret, frame = cap.read()
           im_in = np.array(frame)
+          print("L259 im_in.shape" , im_in.shape)
         # Load the demo image
         else:
           im_file = os.path.join(args.image_dir, imglist[num_images])
@@ -387,8 +387,13 @@ if __name__ == '__main__':
             result_path = os.path.join(folder_name, imglist[num_images][:-4] + "_det.png")
             im2show.save(result_path)
         else:
-            im2showRGB = cv2.cvtColor(im2show, cv2.COLOR_BGR2RGB)
+            # print("L390 im2show ", type(im2show) )
+            # PIL.Image を NumPy 配列に変換
+            im_array = np.array(im2show)
+            im2showRGB = cv2.cvtColor(im_array, cv2.COLOR_BGR2RGB)
             cv2.imshow("frame", im2showRGB)
+            # 画像を表示
+            # im2show.show()
             total_toc = time.time()
             total_time = total_toc - total_tic
             frame_rate = 1 / total_time

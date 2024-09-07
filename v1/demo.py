@@ -44,6 +44,8 @@ try:
 except NameError:
     xrange = range  # Python 3
 
+# 動画保存の設定
+fourcc = cv2.VideoWriter_fourcc(*'XVID')  # コーデックの指定
 
 def parse_args():
   """
@@ -70,7 +72,7 @@ def parse_args():
                       default="images")
   parser.add_argument('--save_dir', dest='save_dir',
                       help='directory to save results',
-                      default="images_det")
+                      default="/home/knishizawa/hand_object_detector/v1/results")
   parser.add_argument('--cuda', dest='cuda', 
                       help='whether use CUDA',
                       action='store_true')
@@ -220,6 +222,10 @@ if __name__ == '__main__':
     if args.cuda > 0:
       fasterRCNN.cuda()
 
+    # if torch.cuda.device_count() > 1:
+    #     print(f"Using {torch.cuda.device_count()} GPUs!")
+    #     fasterRCNN = nn.DataParallel(fasterRCNN)
+
     fasterRCNN.eval()
 
     start = time.time()
@@ -244,9 +250,20 @@ if __name__ == '__main__':
 
     print('Loaded Photo: {} images.'.format(num_images))
 
+    frames_raw = []
+    frames_procees = []
+
+    pretime = time.time()
+    total_tic = time.time()
 
     while (num_images >= 0):
-        total_tic = time.time()
+        while True:
+          if time.time() - pretime > 1 / 12 :
+            # print("L221 time.time() - pretime", time.time() - pretime)
+            pretime = time.time()
+            break
+          else:
+            time.sleep(0.0001)
         if webcam_num == -1:
           num_images -= 1
 
@@ -256,7 +273,7 @@ if __name__ == '__main__':
             raise RuntimeError("Webcam could not open. Please check connection.")
           ret, frame = cap.read()
           im_in = np.array(frame)
-          print("L259 im_in.shape" , im_in.shape)
+          frames_raw.append(frame)
         # Load the demo image
         else:
           im_file = os.path.join(args.image_dir, imglist[num_images])
@@ -381,7 +398,6 @@ if __name__ == '__main__':
             sys.stdout.flush()
 
         if vis and webcam_num == -1:
-            
             folder_name = args.save_dir
             os.makedirs(folder_name, exist_ok=True)
             result_path = os.path.join(folder_name, imglist[num_images][:-4] + "_det.png")
@@ -391,11 +407,13 @@ if __name__ == '__main__':
             # PIL.Image を NumPy 配列に変換
             im_array = np.array(im2show)
             im2showRGB = cv2.cvtColor(im_array, cv2.COLOR_BGR2RGB)
+            frames_procees.append(im2showRGB)
             cv2.imshow("frame", im2showRGB)
             # 画像を表示
             # im2show.show()
             total_toc = time.time()
             total_time = total_toc - total_tic
+            total_tic = time.time()
             frame_rate = 1 / total_time
             print('Frame rate:', frame_rate)
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -404,3 +422,33 @@ if __name__ == '__main__':
     if webcam_num >= 0:
         cap.release()
         cv2.destroyAllWindows()
+
+        raw_image_save_dir = args.save_dir + '/images_raw'
+        processed_image_save_dir = args.save_dir + '/images_processed'
+        # フォルダが存在しない場合は作成
+        if not os.path.exists(raw_image_save_dir):
+            os.makedirs(raw_image_save_dir)
+        if not os.path.exists(processed_image_save_dir):
+            os.makedirs(processed_image_save_dir)
+
+        for i, frame in enumerate(frames_procees):
+          cv2.imwrite( f'{processed_image_save_dir}/image_{i}.jpg', frame)
+
+        # 動画ファイルとしてフレームを保存
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')  # コーデックの指定
+        video_path = f'{args.save_dir}/processed_video.avi'
+        out = cv2.VideoWriter(video_path, fourcc, 12.0, (640, 480))  # ファイル名、コーデック、FPS、解像度
+        for frame in frames_procees:
+            out.write(frame)
+        out.release()  # リソースを解放
+
+        for i, frame in enumerate(frames_raw):
+          cv2.imwrite( f'{raw_image_save_dir}/image_{i}.jpg', frame)
+        # 動画ファイルとしてフレームを保存
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')  # コーデックの指定
+        video_path = f'{args.save_dir}/raw_video.avi'
+        out = cv2.VideoWriter(video_path, fourcc, 12.0, (640, 480))  # ファイル名、コーデック、FPS、解像度
+        for frame in frames_raw:
+            out.write(frame)
+        out.release()  # リソースを解放
+

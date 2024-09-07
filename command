@@ -22,6 +22,16 @@ export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
 
 CUDA_VISIBLE_DEVICES=0 python demo.py --cuda --checkepoch=8 --checkpoint=89999
 
+python demo.py --cuda --checkepoch=8 --checkpoint=89999 --webcam_num 0 --save_dir="/home/knishizawa/hand_object_detector/v1/results/0901_1107"
+python demo.py --cuda --checkepoch=8 --checkpoint=132028 --webcam_num 0 --save_dir="/home/knishizawa/hand_object_detector/v1/results/0901_1110"
+
+
+
+  parser.add_argument('--save_dir', dest='save_dir',
+                      help='directory to save results',
+                      default="/home/knishizawa/hand_object_detector/v1/results")
+
+
 faster_rcnn_1_8_89999
 
 
